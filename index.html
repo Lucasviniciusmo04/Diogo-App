@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coach App</title>
+<style>
+:root{--bg:#eceee8;--card:#fff;--ink:#1c2a27;--mut:#66746f;--line:#d5dad3;--acc:#1d6b58;--hot:#d9532b;--soft:#e2efe9}
+@media (prefers-color-scheme:dark){:root{--bg:#121917;--card:#1a2421;--ink:#e6ece9;--mut:#93a39d;--line:#2d3a36;--acc:#4fc1a3;--hot:#f08a63;--soft:#21332d}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",system-ui,sans-serif}
+header{padding:18px 20px 0;display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:22px;letter-spacing:-.01em}
+#st{font-size:13px;color:var(--mut)}
+nav{display:flex;gap:4px;overflow-x:auto;padding:12px 20px 0;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;border-bottom:3px solid transparent;color:var(--mut);padding:8px 12px;font:inherit;cursor:pointer;white-space:nowrap}
+nav button.on{color:var(--ink);border-color:var(--hot);font-weight:600}
+main{padding:20px;max-width:1100px;margin:auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 12px}h3{font-size:15px;margin:0 0 8px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+label{display:block;font-size:13px;color:var(--mut);margin-bottom:3px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+textarea{min-height:70px;resize:vertical}
+.sc{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{padding:4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:12.5px;color:var(--mut);font-weight:600;white-space:nowrap}
+td input{min-width:64px;padding:5px 6px}
+.avg td{background:var(--soft);font-weight:600;padding:7px 6px}
+.btn{background:var(--acc);color:var(--bg);border:0;border-radius:6px;padding:7px 12px;font:inherit;cursor:pointer}
+.btn.g{background:none;color:var(--mut);border:1px solid var(--line)}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+.bar.over i{background:var(--hot)}
+.tot{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tot b{font-size:20px;display:block}.tot span{font-size:12.5px;color:var(--mut)}
+.row{display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:12px}.row>div{flex:1;min-width:110px}
+.note{font-size:13px;color:var(--mut);white-space:pre-wrap}
+.mut{color:var(--mut)}
+@media(max-width:600px){main{padding:12px}.tot{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header><h1>Coach App</h1><span id="st">A carregar…</span></header>
+<nav id="nav"></nav>
+<main id="main"></main>
+
+<script>
+const TABS=[["dash","Dashboard"],["prog","Ficha de progresso"],["treino","Treino"],["dieta","Dieta"],["conv","Conversões"],["check","Check-in"],["supl","Suplementação"]];
+const PK=["peso","prot","gord","hid","kcal","treino","perf","passos","cardio","sono","qsono","agua","livre","stress","notas"];
+const PH=["Peso (kg)","Proteína","Gordura","Hidratos","Kcal","Treino","Perf. 0-10","Passos","Cardio","Sono (h)","Qual. sono","Água (L)","Ref. livre","Stress","Notas"];
+const NUM=["peso","prot","gord","hid","kcal","perf","passos","sono","agua"];
+const QS=["Maior vitória da semana","Performance de treino / progressões / regressões","Recuperação: dores musculares? Algum treino afetado?","Disposição de treino - mental e física","Disposição geral e bem-estar","Atividade física / cardio","Nutrição: algo a apontar sobre a dieta?","Consumo de cafeína","Digestão","Como sentes o teu físico?","Sono","Alguma questão para mim?","Algo na próxima semana vai afetar a nossa progressão?","Outros comentários"];
+const SUPL=[["Creatina Monohidratada","Força, resistência e cognição","15g dividido pelo pré e intra treino","Sim"],["EAAs","Síntese proteica, reparação muscular","Intra treino","Só se prescrito"],["Maltodextrina","Repor glicogénio durante o treino","Intra treino","Só se prescrito"],["Vitamina D3","Energia e combate à fadiga","5000iu 1ª refeição","Sim"],["Vitamina C","Antioxidante, sistema imunitário","2000mg 1ª refeição","Sim"],["Glutamina","Hidratação e saúde intestinal","15g em jejum","Não"],["Ómega 3 ultra concentrado","Saúde articular e cardiovascular","Mín 1200mg EPA + 800mg DHA / Máx 3000mg EPA + 1500mg DHA","Sim"],["Magnésio bisglicinato","Stress, sono, parassimpático","400mg antes de dormir","Não"],["Ashwagandha KSM 66","Stress, sono, parassimpático","400mg pós treino","Não"],["Fórmula de hidratação","Balanço eletrolítico","1 dose ao acordar e ao deitar","Não"],["Óculos bloqueadores de luz azul","Libertação de melatonina","2h antes de deitar","Não"]];
+const SONO=["Ao acordar, expõe-te a luz branca acima da linha dos olhos durante 2h.","Durante o dia gere o stress para que a adenosina aumente e o sono seja induzido mais facilmente.","Evita luz acima da linha dos olhos 2h antes de deitar; prioriza luz quente abaixo da linha dos olhos.","Se tiveres dificuldade a adormecer, faz expirações profundas e lentas.","Deixa o quarto arejar para ficar mais fresco e com mais O2.","Se acordas muitas vezes, deixa o telemóvel longe de ti.","Não faças as últimas refeições muito perto da hora de deitar nem bebas mais de 1/4 da água nas 2h antes."];
+const DEF_WORK=()=>({name:"",rows:[{ex:"",aq:"",feed:"",trab:"",obs:""}]});
+let S={},FOODS=[],tab="dash",week=1,tw=1,t=null;
+
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=v=>{const n=parseFloat(String(v??"").replace(",","."));return isNaN(n)?0:n};
+const r=(n,d=0)=>n.toLocaleString("pt-PT",{maximumFractionDigits:d,minimumFractionDigits:d});
+function get(p,d=""){return p.split(".").reduce((o,k)=>o==null?o:o[k],S)??d}
+function set(p,v){const ks=p.split(".");let o=S;ks.slice(0,-1).forEach(k=>{o[k]??={};o=o[k]});o[ks.at(-1)]=v;save()}
+function save(){$("#st").textContent="A guardar…";clearTimeout(t);t=setTimeout(async()=>{await fetch("/api/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(S)});$("#st").textContent="Guardado"},500)}
+const inp=(p,ph="",type="text")=>`<input type="${type}" data-p="${p}" value="${esc(get(p))}" ${ph?`placeholder="${ph}"`:""}>`;
+const area=p=>`<textarea data-p="${p}">${esc(get(p))}</textarea>`;
+const food=n=>FOODS.find(f=>f.name===n);
+const kcalOf=(n,q)=>{const f=food(n);if(!f)return{p:0,f:0,h:0,k:0};const m=f.unit==="unid"?num(q):num(q)/100;const p=f.p*m,g=f.f*m,h=f.h*m;return{p,f:g,h,k:p*4+g*9+h*4}};
+
+function weekDates(w){const s=new Date((get("info.inicio")||"2026-05-11")+"T12:00:00");s.setDate(s.getDate()+7*(w-1));return[...Array(7)].map((_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return d})}
+const fd=d=>d.toLocaleDateString("pt-PT",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"});
+
+/* ---------- views ---------- */
+const V={};
+V.dash=()=>`<div class="card"><h2>Informações</h2><div class="grid">
+<div><label>Nome</label>${inp("info.nome")}</div><div><label>Idade</label>${inp("info.idade")}</div>
+<div><label>Altura (cm)</label>${inp("info.altura")}</div><div><label>Peso inicial (kg)</label>${inp("info.peso")}</div>
+<div><label>Data de início</label>${inp("info.inicio","","date")}</div><div><label>Email</label>${inp("info.email","","email")}</div>
+<div><label>Renovação</label>${inp("info.renov","","date")}</div></div></div>
+<div class="grid"><div class="card"><h3>Objetivos long term</h3>${area("obj.long")}</div><div class="card"><h3>Objetivos short term</h3>${area("obj.short")}</div><div class="card"><h3>Notas</h3>${area("obj.notas")}</div></div>
+${(()=>{const ws=Object.keys(get("prog",{})).map(Number).sort((a,b)=>a-b);const pts=ws.map(w=>({w,v:avg(w,"peso")})).filter(x=>x.v>0);if(pts.length<2)return`<div class="card mut">O gráfico de peso aparece quando tiveres pelo menos 2 semanas com peso registado na Ficha de progresso.</div>`;const mn=Math.min(...pts.map(p=>p.v))-.5,mx=Math.max(...pts.map(p=>p.v))+.5;const X=i=>20+i*(560/(pts.length-1)),Y=v=>110-(v-mn)/(mx-mn)*100;return`<div class="card"><h2>Peso médio por semana</h2><svg viewBox="0 0 600 130" width="100%"><polyline fill="none" stroke="var(--acc)" stroke-width="2.5" points="${pts.map((p,i)=>X(i)+","+Y(p.v)).join(" ")}"/>${pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p.v)}" r="4" fill="var(--hot)"/><text x="${X(i)}" y="${Y(p.v)-9}" font-size="11" text-anchor="middle" fill="var(--ink)">${r(p.v,1)}</text>`).join("")}</svg></div>`})()}
+<div class="card"><h3>Disclaimer &amp; renovação</h3><p class="note">Não sou médico nem nutricionista. O intuito não é tratar, prever ou curar algum problema de saúde. Para problemas de saúde contacta o teu profissional de saúde. A informação aqui contida é privada e confidencial entre treinador - aluno e não deve ser partilhada. Se não pretenderes renovar o acompanhamento, deves avisar com pelo menos 2 semanas de antecedência. Não existem reembolsos.</p></div>`;
+
+function avg(w,k){const v=Object.values(get("prog."+w,{})).map(d=>num(d[k])).filter(x=>x>0);return v.length?v.reduce((a,b)=>a+b)/v.length:0}
+V.prog=()=>{const ds=weekDates(week);return`<div class="card"><div class="row"><div style="max-width:160px"><label>Semana</label><select id="wk">${[...Array(88)].map((_,i)=>`<option value="${i+1}" ${i+1==week?"selected":""}>Semana ${i+1}</option>`).join("")}</select></div></div>
+<div class="sc"><table><tr><th>Data</th>${PH.map(h=>`<th>${h}</th>`).join("")}</tr>
+${ds.map((d,i)=>`<tr><td style="white-space:nowrap">${fd(d)}</td>${PK.map(k=>`<td>${inp(`prog.${week}.${i}.${k}`)}</td>`).join("")}</tr>`).join("")}
+<tr class="avg" id="avg"><td>Média</td>${PK.map(k=>`<td data-k="${k}">${NUM.includes(k)?r(avg(week,k),k=="peso"||k=="sono"||k=="agua"?2:0):""}</td>`).join("")}</tr></table></div></div>
+<div class="grid"><div class="card"><h3>Ajustes - nutrição</h3>${area(`aj.${week}.nutri`)}</div><div class="card"><h3>Ajustes - passos / cardio</h3>${area(`aj.${week}.cardio`)}</div><div class="card"><h3>Ajustes - treino</h3>${area(`aj.${week}.treino`)}</div><div class="card"><h3>Notas</h3>${area(`aj.${week}.notas`)}</div></div>`};
+
+V.treino=()=>{const split=get("split",["Push","Pull","Rest","Legs","Upper","Rest","Rest"]);const dias=["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
+return`<div class="card"><h2>Split semanal</h2><div class="sc"><table><tr>${dias.map(d=>`<th>${d}</th>`).join("")}</tr><tr>${dias.map((_,i)=>`<td><input data-p="split.${i}" value="${esc(split[i])}"></td>`).join("")}</tr></table></div></div>
+<div class="row"><div style="max-width:160px"><label>Semana (cargas)</label><select id="tw">${[...Array(10)].map((_,i)=>`<option value="${i+1}" ${i+1==tw?"selected":""}>Semana ${i+1}</option>`).join("")}</select></div></div>
+${["A","B","C","D"].map(L=>{const w=get("work."+L,null)||DEF_WORK();const rows=w.rows;return`<div class="card"><h2>Treino ${L}</h2><div class="row"><div><label>Nome / foco</label>${inp(`work.${L}.name`,"ex: Push")}</div></div><div class="sc"><table><tr><th>Exercício</th><th>Aquec.</th><th>Feed</th><th>Trabalho</th><th>Observações</th><th>Carga/reps S${tw}</th><th></th></tr>
+${rows.map((x,i)=>`<tr><td>${inp(`work.${L}.rows.${i}.ex`)}</td><td>${inp(`work.${L}.rows.${i}.aq`)}</td><td>${inp(`work.${L}.rows.${i}.feed`)}</td><td>${inp(`work.${L}.rows.${i}.trab`,"3x 10-12")}</td><td>${inp(`work.${L}.rows.${i}.obs`)}</td><td>${inp(`load.${L}.${i}.${tw}`)}</td><td><button class="btn g" data-del="${L}.${i}">×</button></td></tr>`).join("")}</table></div>
+<p><button class="btn" data-add="${L}">Adicionar exercício</button> <span class="mut">Sets: ${rows.reduce((a,x)=>a+(String(x.trab).match(/(\d+)\s*x/gi)||[]).reduce((b,m)=>b+num(m),0),0)}</span></p></div>`}).join("")}
+<div class="card"><h3>Intensidade e progressão</h3><p class="note">Todos os sets a 0-1 RIR. Excêntrica controlada, concêntrica explosiva. Descansa o necessário para o máximo output (5-6 min no composto principal, ~90s num isolado). Em bulk progride em reps, microloading ou carga; em cut mantém carga, reps e forma. Regista as sessões em papel e caneta para evitar distrações.</p></div>`};
+
+const MEALS0=[["Refeição 1",[["Ovo (M/L)",2],["Pão bijou",2],["Peça de fruta à escolha",2]]],["Refeição 2",[["Arroz cozido",300],["Carne de vaca 5% gordura",150],["Vegetais à escolha",200],["Azeite",10]]],["Refeição 3",[["Morangos",200],["Iogurte grego ligeiro",100],["Whey",20]]],["Refeição 4",[["Arroz cozido",150],["Peito de frango",200],["Vegetais à escolha",200],["Chocolate negro 85% cacau",20],["Caju",20]]],["Refeição 5",[["Abacaxi",100]]]];
+function meals(){if(!S.meals)S.meals=MEALS0.map(([n,it])=>({name:n,items:it.map(([f,q])=>({f,q}))}));return S.meals}
+V.dieta=()=>{const M=meals();let T={p:0,f:0,h:0,k:0};const tg=get("alvo",{p:120,f:54,h:239,k:1925});
+const body=M.map((m,mi)=>{let s={p:0,f:0,h:0,k:0};const rows=m.items.map((x,i)=>{const c=kcalOf(x.f,x.q);for(const k in s)s[k]+=c[k];return`<tr><td><input list="fl" data-p="meals.${mi}.items.${i}.f" data-re="1" value="${esc(x.f)}"></td><td style="width:90px"><input data-p="meals.${mi}.items.${i}.q" data-re="1" value="${esc(x.q)}"></td><td>${r(c.p,1)}</td><td>${r(c.f,1)}</td><td>${r(c.h,1)}</td><td>${r(c.k)}</td><td><button class="btn g" data-dm="${mi}.${i}">×</button></td></tr>`}).join("");for(const k in s)T[k]+=s[k];
+return`<div class="card"><h3>${esc(m.name)}</h3><div class="sc"><table><tr><th>Alimento</th><th>Qtd (g/unid)</th><th>P</th><th>G</th><th>H</th><th>Kcal</th><th></th></tr>${rows}<tr class="avg"><td>Total</td><td></td><td>${r(s.p)}</td><td>${r(s.f)}</td><td>${r(s.h)}</td><td>${r(s.k)}</td><td></td></tr></table></div><p><button class="btn" data-am="${mi}">Adicionar alimento</button></p></div>`}).join("");
+const bar=(l,v,g)=>`<div><b>${r(v)} / ${r(g)}</b><span>${l}</span><div class="bar ${v>g*1.02?"over":""}"><i style="width:${Math.min(100,g?v/g*100:0)}%"></i></div></div>`;
+return`<datalist id="fl">${FOODS.map(f=>`<option value="${esc(f.name)}">`).join("")}</datalist>
+<div class="card"><h2>Total diário vs. objetivo</h2><div class="tot">${bar("Proteína (g)",T.p,tg.p)}${bar("Gordura (g)",T.f,tg.f)}${bar("Hidratos (g)",T.h,tg.h)}${bar("Kcal",T.k,tg.k)}</div>
+<div class="row" style="margin-top:14px"><div><label>Objetivo proteína (g)</label><input data-p="alvo.p" data-re="1" value="${tg.p}"></div><div><label>Gordura (g)</label><input data-p="alvo.f" data-re="1" value="${tg.f}"></div><div><label>Hidratos (g)</label><input data-p="alvo.h" data-re="1" value="${tg.h}"></div><div><label>Kcal</label><input data-p="alvo.k" data-re="1" value="${tg.k}"></div></div>
+<p class="mut">${r(T.p/(num(get("info.peso"))||1),1)} g/kg proteína · ${r(T.f/(num(get("info.peso"))||1),1)} g/kg gordura · ${r(T.h/(num(get("info.peso"))||1),1)} g/kg hidratos (com o peso inicial do Dashboard)</p></div>${body}
+<p><button class="btn" id="addMeal">Adicionar refeição</button></p>
+<div class="card"><h3>Dicas e notas</h3><p class="note">1 - Come tranquilo(a); se for rápido, faz algumas expirações profundas e lentas antes.
+2 - Come devagar e mastiga bem. Não é sobre quem come mais, mas sobre quem absorve melhor.
+3 - Depois de uma refeição pesada, faz algum NEAT (passos, lavar a loiça, arrumar a casa).
+Água: 5L · Pesar os alimentos cozinhados · Confeção sem molhos ou gorduras · Condimentos até 30-50 kcal/100g · Cafeína até 10h antes de deitar.</p></div>`};
+
+V.conv=()=>{const C=get("conv",[{a:"Peito de frango",q:"100",b:"Pescada"},{a:"Arroz cozido",q:"100",b:"Batata cozida"}]);
+return`<datalist id="fl">${FOODS.map(f=>`<option value="${esc(f.name)}">`).join("")}</datalist><div class="card"><h2>Conversão de alimentos</h2><p class="mut">Troca proteína por proteína, hidratos por hidratos e gordura por gordura. A quantidade é calculada para ficar com as mesmas calorias.</p>
+<div class="sc"><table><tr><th>Alimento atual</th><th>Qtd</th><th>Kcal</th><th>Alimento pretendido</th><th>Qtd equivalente</th><th></th></tr>
+${C.map((c,i)=>{const a=kcalOf(c.a,c.q),fb=food(c.b);const un=fb?(fb.unit==="unid"?1:100):1;const kb=fb?kcalOf(c.b,un).k:0;const q=kb?a.k/kb*un:0;return`<tr><td><input list="fl" data-p="conv.${i}.a" data-re="1" value="${esc(c.a)}"></td><td style="width:90px"><input data-p="conv.${i}.q" data-re="1" value="${esc(c.q)}"></td><td>${r(a.k)}</td><td><input list="fl" data-p="conv.${i}.b" data-re="1" value="${esc(c.b)}"></td><td><b>${r(q)}</b> ${fb?.unit==="unid"?"unid":"g"}</td><td><button class="btn g" data-dc="${i}">×</button></td></tr>`}).join("")}</table></div><p><button class="btn" id="addC">Adicionar conversão</button></p></div>`};
+function ensureConv(){if(!S.conv)S.conv=[{a:"Peito de frango",q:"100",b:"Pescada"},{a:"Arroz cozido",q:"100",b:"Batata cozida"}]}
+
+V.check=()=>`<div class="card"><div class="row"><div style="max-width:160px"><label>Semana</label><select id="wk">${[...Array(14)].map((_,i)=>`<option value="${i+1}" ${i+1==week?"selected":""}>Semana ${i+1}</option>`).join("")}</select></div><div><label>Dia de check-in</label>${inp("ci.dia","","date")}</div><div><label>Dia de resposta / feedback</label>${inp("ci.fb","","date")}</div></div>
+<p class="mut">Processo: 1) preencher a ficha de progresso · 2) responder abaixo ou por áudio no WhatsApp · 3) enviar fotos de progresso · 4) enviar 1 treino completo (1 set de cada exercício).</p>
+${QS.map((q,i)=>`<label style="color:var(--ink);font-weight:600;margin-top:10px">${q}</label>${area(`check.${week}.${i}`)}`).join("")}</div>`;
+
+V.supl=()=>`<div class="card"><h2>Suplementação</h2><div class="sc"><table><tr><th>Suplemento</th><th>Motivo</th><th>Guidelines</th><th>Essencial?</th></tr>${SUPL.map(s=>`<tr>${s.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</table></div></div>
+<div class="card"><h2>Higiene do sono</h2>${SONO.map(s=>`<p>${s}</p>`).join("")}<p class="mut">Outros: banhos de água gelada/quente para reduzir inflamação e stress; aproveita refeições livres e dias de descanso para gerir o stress. É sobre quem faz durante mais tempo.</p></div>`;
+
+/* ---------- wiring ---------- */
+function render(){ensureConv();$("#nav").innerHTML=TABS.map(([k,l])=>`<button class="${k==tab?"on":""}" data-t="${k}">${l}</button>`).join("");$("#main").innerHTML=V[tab]()}
+document.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+if(b.dataset.t){tab=b.dataset.t;render()}
+else if(b.dataset.add){const L=b.dataset.add;S.work??={};S.work[L]??=DEF_WORK();S.work[L].rows.push({ex:"",aq:"",feed:"",trab:"",obs:""});save();render()}
+else if(b.dataset.del){const[L,i]=b.dataset.del.split(".");S.work[L].rows.splice(+i,1);save();render()}
+else if(b.dataset.am){meals()[+b.dataset.am].items.push({f:"",q:""});save();render()}
+else if(b.dataset.dm){const[m,i]=b.dataset.dm.split(".");meals()[+m].items.splice(+i,1);save();render()}
+else if(b.dataset.dc){S.conv.splice(+b.dataset.dc,1);save();render()}
+else if(b.id==="addMeal"){meals().push({name:"Refeição "+(meals().length+1),items:[]});save();render()}
+else if(b.id==="addC"){S.conv.push({a:"",q:"100",b:""});save();render()}});
+document.addEventListener("input",e=>{const el=e.target;if(el.dataset.p&&!el.dataset.re){set(el.dataset.p,el.value);if(tab==="prog"){document.querySelectorAll("#avg td[data-k]").forEach(td=>{const k=td.dataset.k;if(NUM.includes(k))td.textContent=r(avg(week,k),k=="peso"||k=="sono"||k=="agua"?2:0)})}}});
+document.addEventListener("change",e=>{const el=e.target;
+if(el.id==="wk"){week=+el.value;render()}else if(el.id==="tw"){tw=+el.value;render()}
+else if(el.dataset.p&&el.dataset.re){set(el.dataset.p,el.value);render()}});
+
+(async()=>{FOODS=await (await fetch("/api/foods")).json();S=await (await fetch("/api/data")).json();$("#st").textContent="Pronto";render()})();
+</script>
+</body>
+</html>
